@@ -1,3 +1,4 @@
 venv
-steven_gestures
+__pycache__
+data
 # other folders with our videos
