@@ -1,31 +1,98 @@
-# PNG VTuber CS445
+### Collect Training Data (yo face)
+record one emotion at a time.
 
-### Core stuff
-1. Integrate MediaPipe face detection (`face_tracker.py`)
-2. Extract facial landmarks
-3. Calculate features: EAR, MAR, head pose angles (`feature_extractor.py`)
-4. Create character PNG database structure (`image_database.py`)
-5. Implement side-by-side display: original video | character PNG (`renderer.py`)
-6. Build main application loop (`main.py`)
+**Run:**
 
-### Training (Local + Colab)
-1. Record training videos performing each gesture (10-20 samples each, 2-5 seconds per video)
-2. Extract features from video frames using MediaPipe
-3. Save features to CSV file
-4. Upload videos to Label Studio (local)
-5. Label each frame/segment with correct gesture
-6. Export labels from Label Studio
-7. Upload training data (features + labels) to Colab
-8. Train ML model (Random Forest, SVM, idk yet) in Colab
-9. Evaluate model performance (idk how yet)
-10. Download trained model file (`.pkl`)
+```
+python build_dataset.py
+```
 
-### ML Integration
-1. Load trained model in `action_classifier.py`
-3. Test real-time gesture recognition (eye ball it!)
-4. Verify character PNGs display correctly (eye ball it?)
-5. if needed or have time to.. optimize for performance
+When it asks for a label, type one of:
 
-### Evaluation
-1. idk yet
+- happy
+- sad
+- excited
+- angry
+- shocked
 
+A webcam window will open.
+
+- Press **R** to start recording.
+- Hold the expression still and clear for a few seconds.
+- Press **R** again to stop recording.
+- Repeat until you collect about 150 to 200 frames for that emotion.
+- Press **Q** to quit.
+
+Repeat this entire process for all five emotions or more later on when we make this better.
+
+All data is saved automatically into:
+
+```
+data/expressions.csv
+```
+
+it saves each recording in same file
+
+### Train the Model (In Google Colab)
+
+Upload:
+
+```
+data/expressions.csv
+```
+
+to Colab.
+
+Run the training code, which:
+
+- Loads the CSV
+- Trains logistic regression
+- Prints accuracy and confusion matrix
+- Saves: `expression_model.pkl`
+
+Download `expression_model.pkl`.
+
+Put it into your project folder:
+
+```
+pngvtuber/expression_model.pkl
+```
+
+### Monkey Images
+
+Inside the `monkeyfaces/` folder, add more if we need to
+
+### Run the Live PNG-VTuber
+
+```
+python main.py
+```
+
+- Left: your webcam video
+- Top left: live predicted emotion
+- Right: a monkey image that changes with your emotion
+
+Press **Q** to quit.
+
+### each file stuff
+
+- **face_tracker.py**  
+  Detects your face and outputs 468 landmarks.
+
+- **feature_extractor.py**  
+  Converts landmarks into numeric features for machine learning.
+
+- **build_dataset.py**  
+  Records expressions and saves them to CSV.
+
+- **Training in Colab**  
+  Trains the logistic regression model.
+
+- **action_classifier.py**  
+  Loads the trained model and predicts emotions live.
+
+- **main.py**  
+  Runs everything in real time and shows the monkey avatar.
+
+### improve our model cuz right now its not very confident/accurate when moving 
+...
