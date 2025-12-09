@@ -6,26 +6,28 @@ from face_tracker import FaceTracker
 from feature_extractor import FeatureExtractor
 from action_classifier import ActionClassifier
 
-MONKEY_CRIB = "monkeyfaces"
+MONKEY_DIR = "monkeyfaces"
 EMOTIONS = ["happy", "sad", "excited", "angry", "shocked"]
 
 def load_monkey_images():
     monkey_images = {}
 
+    exts = [".png", ".jpg", ".jpeg", ".PNG", ".JPG", ".JPEG"]
+
     for emo in EMOTIONS:
-        filename = emo + ".png"
-        path = os.path.join(MONKEY_CRIB, filename)
+        for ext in exts:
+            path = os.path.join(MONKEY_DIR, emo + ext)
+            if os.path.isfile(path):
+                img = cv2.imread(path, cv2.IMREAD_UNCHANGED)
+                if img is None:
+                    continue
 
-        img = cv2.imread(path, cv2.IMREAD_UNCHANGED)
-        if img is None:
-            print("Warning: could not load monkey image:", path)
-            continue
+                # convert BGRA -> BGR if PNG has alpha
+                if len(img.shape) == 3 and img.shape[2] == 4:
+                    img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
 
-        # If PNG has alpha channel (BGRA), convert to BGR
-        if len(img.shape) == 3 and img.shape[2] == 4:
-            img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
-
-        monkey_images[emo] = img
+                monkey_images[emo] = img
+                break
 
     return monkey_images
 
@@ -47,25 +49,24 @@ def main():
             print("Error: Failed to read frame from webcam.")
             break
 
-        # detect face + landmarks and draw mesh on a copy of the frame
-        landmarks, annotated = tracker.detect_yo_face(frame, draw=True)
+        landmarks, _ = tracker.detect_yo_face(frame, draw=False)
 
         emotion = None
 
-        # extract features and predict emotion if we have a face
         if landmarks is not None:
             features = extractor.extract(landmarks)
             if features is not None:
                 emotion = classifier.predict(features)
 
-        # draw emotion text on webcam side
+        # draw emotion text
+        annotated = frame.copy()
         if emotion is not None:
             cv2.putText(
                 annotated,
                 "Emotion: {}".format(emotion),
-                (10, 60),
+                (10, 40),
                 cv2.FONT_HERSHEY_SIMPLEX,
-                0.8,
+                0.9,
                 (0, 255, 0),
                 2,
                 cv2.LINE_AA
@@ -73,24 +74,21 @@ def main():
 
         display_frame = annotated
 
-        # show monkey on the right if we have a matching PNG
+        # show matching monkey on the right
         if emotion is not None and emotion in monkey_images:
             monkey = monkey_images[emotion]
 
-            # resize monkey image to match webcam frame height
-            h, w, c = annotated.shape
-            mh, mw, mc = monkey.shape
+            h, w, _ = annotated.shape
+            mh, mw, _ = monkey.shape
 
             scale = h / float(mh)
             new_width = int(mw * scale)
             monkey_resized = cv2.resize(monkey, (new_width, h))
 
-            # stack side by side: [webcam | monkey]
             display_frame = np.hstack([annotated, monkey_resized])
 
         cv2.imshow("PNG-VTuber", display_frame)
 
-        # q to quit
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
