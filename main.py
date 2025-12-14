@@ -4,7 +4,10 @@ import numpy as np
 
 from face_tracker import FaceTracker
 from feature_extractor import FeatureExtractor
-from action_classifier import ActionClassifier
+
+# model toggle
+USE_NEURAL_NET = False  # True = neural net (pkl), False = logistic regression (txt)
+
 
 MONKEY_DIR = "monkeyfaces"
 EMOTIONS = ["happy", "sad", "excited", "angry", "shocked", "neutral"]
@@ -35,7 +38,16 @@ def main():
     cap = cv2.VideoCapture(0)
     tracker = FaceTracker()
     extractor = FeatureExtractor()
-    classifier = ActionClassifier("expression_model.pkl")
+
+    # Load model based on toggle
+    if USE_NEURAL_NET:
+        from action_classifier import ActionClassifier
+        classifier = ActionClassifier("expression_model.pkl")
+        print("Using Neural Net model (expression_model.pkl)")
+    else:
+        from training import modloader, modpred
+        emo, coe, intc = modloader("model.txt")
+        print("Using Logistic Regression model (model.txt)")
 
     monkey_images = load_monkey_images()
 
@@ -56,7 +68,10 @@ def main():
         if landmarks is not None:
             features = extractor.extract(landmarks)
             if features is not None:
-                emotion = classifier.predict(features)
+                if USE_NEURAL_NET:
+                    emotion = classifier.predict(features)
+                else:
+                    emotion = modpred(features, emo, coe, intc)
 
         # draw emotion text
         annotated = frame.copy()

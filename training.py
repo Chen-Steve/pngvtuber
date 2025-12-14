@@ -26,7 +26,7 @@ def modtrain(csvpath, outputfile, testsize=0.2, randomstate=661) :
   #     return None
 
   # xs = df[dffeat].values.astype(float)
-  xs = df[[c for c in df.columns if c.startswith("f_")][:10]].values.astype(float)
+  xs = df[[c for c in df.columns if c.startswith("f_")]].values.astype(float)
   ys = df["label"].values
 
   #Splits data into train and test x is amount seen in feature, y is the type of emotion
@@ -110,32 +110,35 @@ def modpred(features, emo, coe, intc):
   return emo[bsty]
 
 
-csv = "expressions.csv"          #adjust path to what is need
+csv = "data/expressions.csv"          #adjust path to what is need i have my csv in folder called data
 outmodtext = "model.txt"  #adjust path to what is need
-modtrain(csv, outmodtext)
+# modtrain(csv, outmodtext)  # uncomment to train logistic regression model
+
 
 
 #Neural network training (more advanced ML assited by AI)
 #pickle like u guys want
 
 from sklearn.neural_network import MLPClassifier as mlp
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 import joblib
+
 def nntrain(csvpath, outputfile, testsize=0.2, randomstate=661) :
 
   df = pd.read_csv(csvpath)
-  dffeat = ["Smile", "L_Ear", "R_Ear", "L_Brow", "R_Brow", "Jaw", "Eardiff", "Pitch", "Yaw", "Mar"]
 
-  # for c in dffeat + ["label"]:
-  #   if c not in df.columns:
-  #     print("ERROR missing column:", c)
-  #     print("Found columns:", df.columns.tolist())
-  #     return None
-
-  # xs = df[dffeat].values.astype(float)
-  xs = df[[c for c in df.columns if c.startswith("f_")][:10]].values.astype(float)
+  xs = df[[c for c in df.columns if c.startswith("f_")]].values.astype(float)
   ys = df["label"].values
 
-  xtrain, xtest, ytrain, ytest = train_test_split(xs, ys, test_size=testsize, random_state=randomstate, stratify=ys)
+  # Encode labels (string -> int)
+  label_encoder = LabelEncoder()
+  ys_encoded = label_encoder.fit_transform(ys)
+
+  # Scale features for better neural net performance
+  scaler = StandardScaler()
+  xs_scaled = scaler.fit_transform(xs)
+
+  xtrain, xtest, ytrain, ytest = train_test_split(xs_scaled, ys_encoded, test_size=testsize, random_state=randomstate, stratify=ys_encoded)
 
   #simple neural net (you can change hidden sizes later)
   net = mlp(hidden_layer_sizes=(64,64), max_iter=1000, random_state=randomstate)
@@ -143,25 +146,39 @@ def nntrain(csvpath, outputfile, testsize=0.2, randomstate=661) :
 
   ypred = net.predict(xtest)
 
-  print(cr(ytest, ypred))
+  print(cr(ytest, ypred, target_names=label_encoder.classes_))
   print(cm(ytest, ypred))
 
   if os.path.dirname(outputfile) != "":
     os.makedirs(os.path.dirname(outputfile), exist_ok=True)
 
-  joblib.dump(net, outputfile)
-  print("Done")
-  return net
+  # Save as bundle with model, scaler, and label_encoder
+  bundle = {
+    "model": net,
+    "scaler": scaler,
+    "label_encoder": label_encoder
+  }
+  joblib.dump(bundle, outputfile)
+  print("Done - saved bundle to", outputfile)
+  return bundle
 
 
 def nnload(modpath):
   return joblib.load(modpath)
 
 
-def nnpred(features, net):
-  return net.predict([features])[0]
+def nnpred(features, bundle):
+  scaler = bundle["scaler"]
+  model = bundle["model"]
+  label_encoder = bundle["label_encoder"]
+  
+  X_scaled = scaler.transform([features])
+  y_pred = model.predict(X_scaled)[0]
+  return label_encoder.inverse_transform([y_pred])[0]
 
 
-fil = "expression_model.pkl"
-nntrain(csv, fil)
-# pred = nnpred(features, nnload(fil))
+if __name__ == "__main__":
+  csv = "data/expressions.csv"
+  fil = "expression_model.pkl"
+  nntrain(csv, fil)
+  # pred = nnpred(features, nnload(fil))
