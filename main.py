@@ -7,7 +7,7 @@ from feature_extractor import FeatureExtractor
 from action_classifier import ActionClassifier
 
 MONKEY_DIR = "monkeyfaces"
-EMOTIONS = ["happy", "sad", "excited", "angry", "shocked"]
+EMOTIONS = ["happy", "sad", "excited", "angry", "shocked", "neutral"]
 
 def load_monkey_images():
     monkey_images = {}
