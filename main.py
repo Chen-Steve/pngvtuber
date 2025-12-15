@@ -6,11 +6,11 @@ from face_tracker import FaceTracker
 from feature_extractor import FeatureExtractor
 
 # model toggle
-USE_NEURAL_NET = False  # True = neural net (pkl), False = logistic regression (txt)
+USE_NEURAL_NET = True  # True = neural net (pkl), False = logistic regression (txt)
 
 
 MONKEY_DIR = "monkeyfaces"
-EMOTIONS = ["happy", "sad", "excited", "angry", "shocked", "neutral"]
+EMOTIONS = ["happy", "sad", "angry", "shocked", "neutral"]
 
 def load_monkey_images():
     monkey_images = {}

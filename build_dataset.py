@@ -56,6 +56,7 @@ def main():
     recording = False
     saved_count = 0
     first_feature_len = None
+    MAX_SAMPLES = 400
 
     while True:
         ret, frame = cap.read()
@@ -84,13 +85,18 @@ def main():
                     writer.writerow(row)
 
                 saved_count += 1
+                
+                # Stop after reaching max samples
+                if saved_count >= MAX_SAMPLES:
+                    print("Reached maximum of {} samples. Stopping.".format(MAX_SAMPLES))
+                    break
 
         # draw status text on the frame
         status_text = "REC" if recording else "IDLE"
         color = (0, 0, 255) if recording else (255, 255, 255)
         cv2.putText(
             annotated,
-            "Label: {} | Status: {} | Saved: {}".format(label, status_text, saved_count),
+            "Label: {} | Status: {} | Saved: {}/{}".format(label, status_text, saved_count, MAX_SAMPLES),
             (10, 30),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.7,

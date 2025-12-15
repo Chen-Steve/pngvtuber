@@ -10,7 +10,6 @@ from sklearn.linear_model import LogisticRegression as lgr
 import os
 
 
-
 def modtrain(csvpath, outputfile, testsize=0.2, randomstate=661) :
 
   df = pd.read_csv(csvpath)
@@ -140,13 +139,25 @@ def nntrain(csvpath, outputfile, testsize=0.2, randomstate=661) :
 
   xtrain, xtest, ytrain, ytest = train_test_split(xs_scaled, ys_encoded, test_size=testsize, random_state=randomstate, stratify=ys_encoded)
 
-  #simple neural net (you can change hidden sizes later)
-  net = mlp(hidden_layer_sizes=(64,64), max_iter=1000, random_state=randomstate)
+  # neural net
+  net = mlp(
+      hidden_layer_sizes=(128, 64, 32),
+      max_iter=2000,
+      random_state=randomstate,
+      learning_rate_init=0.001,
+      early_stopping=True,
+      validation_fraction=0.1,
+      n_iter_no_change=20,
+      alpha=0.001
+  )
   net.fit(xtrain,ytrain)
 
   ypred = net.predict(xtest)
 
+  print("Classification Report")
   print(cr(ytest, ypred, target_names=label_encoder.classes_))
+  print("\n Confusion Matrix")
+  print("Classes:", label_encoder.classes_)
   print(cm(ytest, ypred))
 
   if os.path.dirname(outputfile) != "":
